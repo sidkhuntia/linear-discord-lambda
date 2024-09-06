@@ -1,12 +1,10 @@
+import { APIGatewayProxyHandler } from 'aws-lambda';
 import { LinearClient } from '@linear/sdk';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { MessageEmbed } from 'discord.js';
-import { z, ZodError, ZodIssue } from 'zod';
-import { HttpError } from '../lib/HttpError';
-import { SCHEMA } from '../lib/schema';
-import { Action, Model } from '../lib/schema/utils';
-
-const DISCORD_WEBHOOKS_URL = 'https://discord.com/api/webhooks';
+import { z, ZodError } from 'zod';
+import { HttpError } from './lib/HttpError';
+import { SCHEMA } from './lib/schema';
+import { Action, Model } from './lib/schema/utils';
 
 const WEBHOOK_USERNAME = 'Linear';
 const WEBHOOK_AVATAR_URL = 'https://ldw.screfy.com/static/linear.png';
@@ -15,59 +13,74 @@ const LINEAR_BASE_URL = 'https://linear.app';
 const LINEAR_COLOR = '#5E6AD2';
 const LINEAR_TRUSTED_IPS = z.enum(['35.231.147.226', '35.243.134.228']);
 
-const QUERY_SCHEMA = z.object({
-	webhookId: z.string(),
-	webhookToken: z.string(),
-	linearToken: z.string()
+// Validate environment variables
+const ENV_SCHEMA = z.object({
+	DISCORD_WEBHOOKS_URL: z.string(),
+	LINEAR_TOKEN: z.string(),
 });
 
 function parseIdentifier(url: string) {
 	return url.split('/')[5].split('#')[0];
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export const handler: APIGatewayProxyHandler = async (event, context) => {
+	console.log('Lambda function invoked with event:', JSON.stringify(event));
+
 	try {
-		const forwardedFor = req.headers['x-vercel-forwarded-for'] || '';
+		// Validate environment variables
+		const env = ENV_SCHEMA.parse(process.env);
+		console.log('Environment variables validated successfully');
+
+		const forwardedFor = event.headers['X-Forwarded-For'] || '';
+		console.log('Forwarded-For IP:', forwardedFor);
 
 		// Allow only `POST` method:
-		if (req.method !== 'POST') {
-			throw new HttpError(`Method ${req.method} is not allowed.`, 405);
+		if (event.httpMethod !== 'POST') {
+			console.log(`Invalid HTTP method: ${event.httpMethod}`);
+			throw new HttpError(`Method ${event.httpMethod} is not allowed.`, 405);
 		}
 
 		// Make sure a request is truly sent from Linear:
-		const { success } = LINEAR_TRUSTED_IPS.safeParse(forwardedFor);
+		const { success } = LINEAR_TRUSTED_IPS.safeParse(forwardedFor.split(',')[0]);
 
 		if (process.env.NODE_ENV !== 'development' && !success) {
+			console.log(`Unauthorized IP address: ${forwardedFor}`);
 			throw new HttpError(
 				`Request from IP address ${forwardedFor} is not allowed.`,
 				403
 			);
 		}
 
-		const { webhookId, webhookToken, linearToken } = QUERY_SCHEMA.parse(
-			req.query
-		);
-		const result = SCHEMA.safeParse(req.body);
+		const result = SCHEMA.safeParse(JSON.parse(event.body || '{}'));
+		console.log('Parsed event body:', JSON.stringify(result));
 
 		// Prevent Linear repeating requests for not supported resources:
 		if (!result.success) {
-			return res.send({
-				success: true,
-				message: 'Event skipped.',
-				error: null
-			});
+			console.log('Unsupported event type, skipping');
+			return {
+				statusCode: 200,
+				body: JSON.stringify({
+					success: true,
+					message: 'Event skipped.',
+					error: null
+				})
+			};
 		}
 
 		const body = result.data;
+		console.log('Processing event:', body.type, body.action);
+
 		const embed = new MessageEmbed({
 			color: LINEAR_COLOR,
 			timestamp: body.createdAt
 		});
-		const linear = new LinearClient({ apiKey: linearToken });
+		const linear = new LinearClient({ apiKey: env.LINEAR_TOKEN });
 
 		switch (body.type) {
 			case Model.ISSUE: {
 				if (body.action === Action.CREATE) {
+					console.log('Processing new issue creation');
+					console.log('Issue creator:', body.data.creatorId);
 					const creator = await linear.user(body.data.creatorId);
 					const identifier = parseIdentifier(body.url);
 					const teamUrl = `${LINEAR_BASE_URL}/team/${body.data.team.key}`;
@@ -88,6 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 					if (body.data.assignee) {
 						const assignee = await linear.user(body.data.assignee.id);
+						console.log('Issue assigned to:', assignee.name);
 
 						embed.addFields({
 							name: 'Assignee',
@@ -100,6 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 						embed.setDescription(body.data.description);
 					}
 				} else if (body.action === Action.UPDATE && body.updatedFrom?.stateId) {
+					console.log('Processing issue status update');
 					const creator = await linear.user(body.data.creatorId);
 					const identifier = parseIdentifier(body.url);
 
@@ -116,6 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			}
 			case Model.COMMENT: {
 				if (body.action === Action.CREATE) {
+					console.log('Processing new comment creation');
 					const user = await linear.user(body.data.userId);
 					const identifier = parseIdentifier(body.url);
 
@@ -131,7 +147,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			}
 		}
 
-		const webhookUrl = `${DISCORD_WEBHOOKS_URL}/${webhookId}/${webhookToken}`;
+		const webhookUrl = env.DISCORD_WEBHOOKS_URL;
+		console.log('Sending Discord webhook to:', webhookUrl);
 
 		await fetch(webhookUrl, {
 			method: 'POST',
@@ -143,9 +160,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			})
 		});
 
-		res.send({ success: true, message: 'OK', error: null });
+		console.log('Discord webhook sent successfully');
+
+		return {
+			statusCode: 200,
+			body: JSON.stringify({ success: true, message: 'OK', error: null })
+		};
 	} catch (e) {
-		let error: string | ZodIssue[] = 'Something went wrong.';
+		let error: string | z.ZodIssue[] = 'Something went wrong.';
 		let statusCode = 500;
 
 		if (e instanceof HttpError) {
@@ -156,6 +178,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			statusCode = 400;
 		}
 
-		res.status(statusCode).send({ success: false, message: null, error });
+		console.error('Error in Lambda function:', error);
+
+		return {
+			statusCode,
+			body: JSON.stringify({ success: false, message: null, error })
+		};
 	}
-}
+};

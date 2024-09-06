@@ -1,19 +1,18 @@
 {
 	"compilerOptions": {
-		"moduleResolution": "Node",
-		"target": "ES2021",
-		"module": "CommonJS",
-		"lib": ["ES2021"],
-		"noImplicitAny": true,
-		"alwaysStrict": true,
-		"skipLibCheck": true,
+		"target": "ES2018",
+		"module": "commonjs",
 		"strict": true,
-		"forceConsistentCasingInFileNames": true,
 		"esModuleInterop": true,
-		"incremental": true,
-		"allowJs": false,
-		"noEmit": true
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"outDir": "./dist",
+		"rootDir": "./src"
 	},
-	"include": ["**/*.ts"],
-	"exclude": ["node_modules"]
+	"include": [
+		"src/**/*"
+	],
+	"exclude": [
+		"dist/node_modules"
+	]
 }

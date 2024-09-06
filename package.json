@@ -3,22 +3,31 @@
 	"description": "Receive Linear updates directly in your Discord channels.",
 	"license": "MIT",
 	"version": "0.0.0",
-	"author": "screfy <me@screfy.com> (https://screfy.com)",
+	"author": "Siddhartha Khuntia <sidkhuntia>",
 	"private": true,
 	"scripts": {
 		"format": "prettier --write .",
-		"typecheck": "tsc"
+		"typecheck": "tsc",
+		"build": "tsc",
+		"package": "npm install && npm run clean && npm run build && npm run package:prepare && npm run package:zip",
+		"clean": "rm -rf dist",
+		"package:prepare": "npm ci --only=production && mv node_modules dist/",
+		"package:zip": "cd dist && zip -r ../function.zip .",
+		"deploy": "aws lambda update-function-code  --zip-file fileb://function.zip"
 	},
 	"devDependencies": {
-		"@types/node": "^18.11.9",
+		"@types/aws-lambda": "^8.10.145",
+		"@types/node": "^18.19.50",
 		"@types/node-fetch": "^2.6.2",
 		"@vercel/node": "^2.6.4",
+		"aws-sdk": "^2.1690.0",
+		"dotenv": "^16.4.5",
 		"prettier": "^2.8.0",
-		"typescript": "^4.9.3"
+		"typescript": "^4.9.5"
 	},
 	"dependencies": {
 		"@linear/sdk": "^1.22.0",
-		"discord.js": "13.12.0",
-		"zod": "^3.19.1"
+		"discord.js": "^13.17.1",
+		"zod": "^3.23.8"
 	}
 }
