@@ -8,7 +8,6 @@ This project implements an AWS Lambda function that integrates Linear with Disco
 - Sends formatted messages to Discord using webhooks
 - Supports issue creation, status updates, and comment creation events
 - Implements IP-based security checks for Linear webhooks
-- Uses environment variables for configuration
 
 ### Supoorted Events
 - [X] Issues
