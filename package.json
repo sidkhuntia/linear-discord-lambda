@@ -9,7 +9,7 @@
 		"format": "prettier --write .",
 		"typecheck": "tsc",
 		"build": "tsc",
-		"package": "npm install && npm run clean && npm run build && npm run package:prepare && npm run package:zip",
+		"package": "npm install && npm run clean && npm run build && npm run package:prepare && npm run package:zip && npm install",
 		"clean": "rm -rf dist",
 		"package:prepare": "npm ci --only=production && mv node_modules dist/",
 		"package:zip": "cd dist && zip -r ../function.zip .",
