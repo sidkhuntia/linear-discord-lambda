@@ -5,6 +5,7 @@ import { z, ZodError } from 'zod';
 import { HttpError } from './lib/HttpError';
 import { SCHEMA } from './lib/schema';
 import { Action, Model } from './lib/schema/utils';
+import { checkSignature } from './utils/securityChecker';
 
 const WEBHOOK_USERNAME = 'Linear';
 const WEBHOOK_AVATAR_URL = 'https://ldw.screfy.com/static/linear.png';
@@ -17,6 +18,7 @@ const LINEAR_TRUSTED_IPS = z.enum(['35.231.147.226', '35.243.134.228', '34.38.87
 const ENV_SCHEMA = z.object({
 	DISCORD_WEBHOOKS_URL: z.string(),
 	LINEAR_TOKEN: z.string(),
+	LINEAR_SECRET: z.string()
 });
 
 function parseIdentifier(url: string) {
@@ -30,6 +32,16 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
 		// Validate environment variables
 		const env = ENV_SCHEMA.parse(process.env);
 		console.log('Environment variables validated successfully');
+
+		// Validate Linear signature
+		const signature = event.headers['Linear-Signature'] || '';
+		const checkResult = checkSignature(signature, event.body || '', env.LINEAR_SECRET);
+
+		if (!checkResult.isValid) {
+			console.log('Invalid Linear signature:', checkResult.error);
+			throw new HttpError(checkResult.error || 'Invalid signature.', 403);
+		}
+
 
 		const forwardedFor = event.headers['X-Forwarded-For'] || '';
 		console.log('Forwarded-For IP:', forwardedFor);
