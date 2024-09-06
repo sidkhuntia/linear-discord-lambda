@@ -7,7 +7,9 @@ This project implements an AWS Lambda function that integrates Linear with Disco
 - Processes Linear webhook events for issues and comments
 - Sends formatted messages to Discord using webhooks
 - Supports issue creation, status updates, and comment creation events
-- Implements IP-based security checks for Linear webhooks
+- Implements security checks
+   - Linear IP based validation
+   - Linear webhook signature validation
 
 ### Supoorted Events
 - [X] Issues
@@ -45,6 +47,7 @@ This project implements an AWS Lambda function that integrates Linear with Disco
    ```
    DISCORD_WEBHOOKS_URL=your_discord_webhook_url
    LINEAR_TOKEN=your_linear_api_token
+   LINEAR_SECRET=your_linear_webhook_secret
    ```
 
 
@@ -71,6 +74,7 @@ This command will:
 3. Configure environment variables in the Lambda function settings:
    - `DISCORD_WEBHOOKS_URL`
    - `LINEAR_TOKEN`
+   - `LINEAR_SECRET`
 
 4. Set up an API Gateway trigger for your Lambda function.
 
@@ -92,6 +96,7 @@ Once deployed and configured:
 - `npm run package`: Builds and packages the function for deployment
 - `npm run clean`: Removes the `dist` directory
 - `npm run deploy -- --function-name {function_name}`: Deploys the function to AWS Lambda
+- `npm run test`: Runs the tests locally
 
 ## Contributing
 
