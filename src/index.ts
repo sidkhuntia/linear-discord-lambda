@@ -11,7 +11,7 @@ const WEBHOOK_AVATAR_URL = 'https://ldw.screfy.com/static/linear.png';
 
 const LINEAR_BASE_URL = 'https://linear.app';
 const LINEAR_COLOR = '#5E6AD2';
-const LINEAR_TRUSTED_IPS = z.enum(['35.231.147.226', '35.243.134.228']);
+const LINEAR_TRUSTED_IPS = z.enum(['35.231.147.226', '35.243.134.228', '34.38.87.206', '34.140.253.14']);
 
 // Validate environment variables
 const ENV_SCHEMA = z.object({
