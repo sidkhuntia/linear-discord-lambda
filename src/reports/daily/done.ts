@@ -62,7 +62,7 @@ const get_user_name = (assignee: Issue['assignee']) => {
     return "Unassigned";
 }
 
-async function generateDailyReport(): Promise<DailyReport> {
+export default async function generateDailyReport(): Promise<DailyReport> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayString = today.toISOString().split('T')[0];

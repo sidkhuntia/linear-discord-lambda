@@ -1,4 +1,4 @@
-import { APIGatewayProxyHandler } from 'aws-lambda';
+import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { LinearClient } from '@linear/sdk';
 import { MessageEmbed } from 'discord.js';
 import { z, ZodError } from 'zod';
@@ -7,6 +7,7 @@ import { SCHEMA } from './lib/schema';
 import { Action, Model } from './lib/schema/utils';
 import { checkSignature } from './utils/securityChecker';
 import { sendDiscordWebhook } from './utils/sendMessageToDiscord';
+import generateDailyReport from './reports/daily/done';
 
 
 const LINEAR_BASE_URL = 'https://linear.app';
@@ -24,13 +25,31 @@ function parseIdentifier(url: string) {
 	return url.split('/')[5].split('#')[0];
 }
 
-export const handler: APIGatewayProxyHandler = async (event, context) => {
+// custom eventtype that includes both APIGatewayProxyEvent and EventBridge event
+type CustomEvent = APIGatewayProxyEvent & {
+	job_type?: string;
+};
+
+
+export const handler: APIGatewayProxyHandler = async (event: CustomEvent, context) => {
 	console.log('Lambda function invoked with event:', JSON.stringify(event));
 
 	try {
 		// Validate environment variables
 		const env = ENV_SCHEMA.parse(process.env);
 		console.log('Environment variables validated successfully');
+
+		if (event["job_type"] === "daily_report") {
+			console.log("Daily report job type");
+			const report = await generateDailyReport();
+
+			return {
+				statusCode: 200,
+				body: JSON.stringify({ success: true, message: 'OK', error: null })
+			};
+		}
+
+
 
 		// Validate Linear signature
 		const signature = event.headers['Linear-Signature'] || '';
