@@ -6,9 +6,8 @@ import { HttpError } from './lib/HttpError';
 import { SCHEMA } from './lib/schema';
 import { Action, Model } from './lib/schema/utils';
 import { checkSignature } from './utils/securityChecker';
+import { sendDiscordWebhook } from './utils/sendMessageToDiscord';
 
-const WEBHOOK_USERNAME = 'Linear';
-const WEBHOOK_AVATAR_URL = 'https://ldw.screfy.com/static/linear.png';
 
 const LINEAR_BASE_URL = 'https://linear.app';
 const LINEAR_COLOR = '#5E6AD2';
@@ -159,20 +158,9 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
 			}
 		}
 
-		const webhookUrl = env.DISCORD_WEBHOOKS_URL;
-		console.log('Sending Discord webhook to:', webhookUrl);
-
-		await fetch(webhookUrl, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({
-				username: WEBHOOK_USERNAME,
-				avatar_url: WEBHOOK_AVATAR_URL,
-				embeds: [embed.toJSON()]
-			})
+		await sendDiscordWebhook({
+			embed,
 		});
-
-		console.log('Discord webhook sent successfully');
 
 		return {
 			statusCode: 200,
