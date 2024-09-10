@@ -13,7 +13,7 @@
 		"clean": "rm -rf dist",
 		"package:prepare": "npm ci --only=production && mv node_modules dist/",
 		"package:zip": "cd dist && zip -r ../function.zip .",
-		"deploy": "npm run package && aws lambda update-function-code  --zip-file fileb://function.zip",
+		"deploy": "npm run package && aws lambda update-function-code --zip-file fileb://function.zip",
 		"test": "npm run build && node test/test-lambda.js"
 	},
 	"devDependencies": {
