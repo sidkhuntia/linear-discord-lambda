@@ -7,7 +7,7 @@ import { SCHEMA } from './lib/schema';
 import { Action, Model } from './lib/schema/utils';
 import { checkSignature } from './utils/securityChecker';
 import { sendDiscordWebhook } from './utils/sendMessageToDiscord';
-import generateDailyReport from './reports/daily/done';
+import sendDailyReport from './reports/daily/done';
 
 
 const LINEAR_BASE_URL = 'https://linear.app';
@@ -41,11 +41,11 @@ export const handler: APIGatewayProxyHandler = async (event: CustomEvent, contex
 
 		if (event["job_type"] === "daily_report") {
 			console.log("Daily report job type");
-			const report = await generateDailyReport();
+			const report = await sendDailyReport();
 
 			return {
 				statusCode: 200,
-				body: JSON.stringify({ success: true, message: 'OK', error: null })
+				body: JSON.stringify({ success: true, message: report, error: null })
 			};
 		}
 

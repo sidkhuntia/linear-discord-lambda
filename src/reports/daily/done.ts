@@ -62,7 +62,7 @@ const get_user_name = (assignee: Issue['assignee']) => {
     return "Unassigned";
 }
 
-export default async function generateDailyReport(): Promise<DailyReport> {
+async function generateDailyReport(): Promise<DailyReport> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayString = today.toISOString().split('T')[0];
@@ -119,25 +119,25 @@ export default async function generateDailyReport(): Promise<DailyReport> {
     }
 }
 
-// Usage example
-generateDailyReport()
-    .then(report => {
+export default async function sendDailyReport() {
+    try {
+        const report = await generateDailyReport();
         const embed = createDailyReportEmbed(report);
         sendDiscordWebhook({
             embed
         });
-    })
-    .catch(error => {
+        return "Daily report sent successfully";
+    } catch (error) {
         console.error('Failed to generate daily report:', error);
-    });
-
+    }
+}
 
 export function createDailyReportEmbed(report: DailyReport): MessageEmbed {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
     const embed = new MessageEmbed()
         .setColor('#0099ff')
-        .setTitle(`Daily Report ${ date.toLocaleDateString() }`)
+        .setTitle(`Daily Report ${date.toLocaleDateString()}`)
         .setDescription('Summary of today\'s activities')
         .setTimestamp();
 
