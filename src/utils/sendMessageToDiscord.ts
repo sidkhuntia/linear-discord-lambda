@@ -1,10 +1,6 @@
 import { MessageEmbed } from 'discord.js';
 import { z, ZodError } from 'zod';
 
-import dotenv from 'dotenv';
-dotenv.config();
-
-
 const WEBHOOK_USERNAME = 'Linear';
 const WEBHOOK_AVATAR_URL = 'https://ldw.screfy.com/static/linear.png';
 

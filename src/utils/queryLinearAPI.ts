@@ -1,9 +1,6 @@
 
 import { z, ZodError } from 'zod';
 
-import dotenv from 'dotenv';
-dotenv.config();
-
 // Validate environment variables
 const ENV_SCHEMA = z.object({
     LINEAR_TOKEN: z.string(),
@@ -29,7 +26,7 @@ async function queryLinearAPI(query: string): Promise<GraphQLResponse> {
         body: JSON.stringify({ query }),
     });
 
-    
+
 
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
