@@ -123,7 +123,7 @@ export default async function sendDailyReport() {
     try {
         const report = await generateDailyReport();
         const embed = createDailyReportEmbed(report);
-        sendDiscordWebhook({
+        await sendDiscordWebhook({
             embed
         });
         return "Daily report sent successfully";
